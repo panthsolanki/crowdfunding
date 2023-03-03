@@ -1,7 +1,7 @@
 import './App.css';
 import idl from './idl.json';
 import { Connection, PublicKey, clusterApiUrl } from "@solana/web3.js";
-import { Program, AnchorProvider, web3, utils, BN } from "@project-serum/anchor";
+import { Program, AnchorProvider, web3, utils } from "@project-serum/anchor";
 import { useEffect, useState } from 'react';
 import { Buffer } from "buffer";
 
@@ -15,6 +15,7 @@ const { SystemProgram } = web3;
 
 const App = () => {
   const [walletAddress, setWalletAddress] = useState(null);
+  const [campaigns, setCampaigns] = useState([])
   const getProvider = () => {
     const connection = new Connection(network, opts.preflightCommitment)
     const provider = new AnchorProvider(connection, window.solana, opts.preflightCommitment)
@@ -50,13 +51,27 @@ const App = () => {
     } else {
       alert("Solana object not found! Get some Phantom wallet")
     }
-  }
+  };
+
+  const getCampaigns = async () => {
+    const connection = new Connection(network, opts.preflightCommitment);
+    const provider = getProvider();
+    const program = new Program(idl, programID, provider);
+    Promise.all(
+      (await connection.getProgramAccounts(programID)).map(
+        async (campaign) => ({
+          ...(await program.account.campaign.fetch(campaign.pubkey)),
+          pubkey: campaign.pubkey,
+        })
+      )
+    ).then((campaigns) => setCampaigns(campaigns));
+  };
 
   const createCampaign = async () => {
     try {
       const provider = getProvider();
       const program = new Program(idl, programID, provider);
-      const [campaign] = await PublicKey.findProgramAddressSync(
+      const [campaign] = await PublicKey.findProgramAddress(
         [
           utils.bytes.utf8.encode("CAMPAIGN_DEMO"),
           provider.wallet.publicKey.toBuffer(),
@@ -77,7 +92,18 @@ const App = () => {
   };
 
   const renderConnectedWallet = () => {
-    return <button onClick={createCampaign}>create Campaign</button>
+    <>
+      <button onClick={createCampaign}>Create Campaign</button>
+      <button onClick={getCampaigns}>Get Campaigns</button>
+      <br />
+      {campaigns.length && campaigns.map(campaign => (<>
+        <p>Campaign ID: {campaign.pubkey.toString()}</p>
+        <p>Balance: {(campaign.amountDonated / web3.LAMPORTS_PER_SOL).toString()}</p>
+        <p>{campaign.name}</p>
+        <p>{campaign.description}</p>
+        <br />
+      </>))}
+    </>
   };
 
   const renderNotConnectedWallet = () => {
