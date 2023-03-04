@@ -92,17 +92,17 @@ const App = () => {
   };
 
   const renderConnectedWallet = () => {
-    <>
+    return <>
       <button onClick={createCampaign}>Create Campaign</button>
       <button onClick={getCampaigns}>Get Campaigns</button>
       <br />
-      {campaigns.length && campaigns.map(campaign => (<>
+      {campaigns.map((campaign, index) => (<div key={index}>
         <p>Campaign ID: {campaign.pubkey.toString()}</p>
         <p>Balance: {(campaign.amountDonated / web3.LAMPORTS_PER_SOL).toString()}</p>
         <p>{campaign.name}</p>
         <p>{campaign.description}</p>
         <br />
-      </>))}
+      </div>))}
     </>
   };
 
@@ -119,6 +119,7 @@ const App = () => {
   }, []);
 
   return (<div className='App'>
+    <h1>your wallet address: {walletAddress} </h1>
     {!walletAddress && renderNotConnectedWallet()}
     {walletAddress && renderConnectedWallet()}
   </div>)
