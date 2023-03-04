@@ -106,11 +106,29 @@ const App = () => {
       console.log("Donate some money to ", publicKey.toString());
       getCampaigns();
     } catch (error) {
-      console.log('Error creating campaign account ', error);
+      console.log('Error in donating ', error);
     }
   };
 
-  const renderConnectedWallet = () => {
+  const withdraw = async (publicKey) => {
+    try {
+      const provider = getProvider();
+      const program = new Program(idl, programID, provider);
+
+      await program.rpc.withdraw(new BN(0.02 * web3.LAMPORTS_PER_SOL), {
+        accounts: {
+          campaign: publicKey,
+          user: provider.wallet.publicKey,
+        },
+      })
+      console.log("withdraw some money from ", publicKey.toString());
+      getCampaigns();
+    } catch (error) {
+      console.log('Error withdraw ', error);
+    }
+  };
+
+  const renderConnectedContainer = () => {
     return <>
       <button onClick={createCampaign}>Create Campaign</button>
       <button onClick={getCampaigns}>Get Campaigns</button>
@@ -122,6 +140,9 @@ const App = () => {
         <p>{campaign.description}</p>
         <br />
         <button onClick={() => donate(campaign.pubkey)}>Click to Donate</button>
+        <br />
+        <br />
+        <button onClick={() => withdraw(campaign.pubkey)}>Click to Withdraw</button>
       </div>))}
       <br />
     </>
@@ -142,7 +163,7 @@ const App = () => {
   return (<div className='App'>
     <h1>your wallet address: {walletAddress} </h1>
     {!walletAddress && renderNotConnectedWallet()}
-    {walletAddress && renderConnectedWallet()}
+    {walletAddress && renderConnectedContainer()}
   </div>)
 }
 
